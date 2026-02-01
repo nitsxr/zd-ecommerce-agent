@@ -12,6 +12,18 @@ open http://localhost:8000  # Chat UI
 
 ---
 
+## Screenshots
+
+| Chat | Trace |
+|------|-------|
+| ![Chat](screens/chat.png) | ![Trace](screens/trace.png) |
+
+| Stats | Tests |
+|-------|-------|
+| ![Stats](screens/stats.png) | ![Tests](screens/tests.png) |
+
+---
+
 ## Key Features
 
 | Feature | Implementation |
