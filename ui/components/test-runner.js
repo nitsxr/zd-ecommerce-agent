@@ -46,17 +46,24 @@
 
   function renderResults(data) {
     if (!resultsEl) return;
-    if (!data || !data.results || data.results.length === 0) {
-      resultsEl.innerHTML = '<p class="tests-empty">Run tests to see results</p>';
-      return;
-    }
-    var passed = data.results.filter(function (r) { return r.passed; }).length;
-    var failed = data.results.length - passed;
+    var results = (data && data.results) ? data.results : (Array.isArray(data) ? data : []);
+    var total = results.length;
+    var passed = results.filter(function (r) { return r.passed; }).length;
+    var failed = total - passed;
+
     var html = '<div class="tests-summary">' +
       '<span class="tests-summary-pass">' + passed + ' passed</span>' +
       '<span class="tests-summary-fail">' + failed + ' failed</span>' +
+      '<span class="tests-summary-total">' + total + ' total</span>' +
       '</div>';
-    data.results.forEach(function (r) {
+
+    if (total === 0) {
+      html += '<p class="tests-empty">No test scenarios were run. Load test scenarios (or run all) and try again.</p>';
+      resultsEl.innerHTML = html;
+      return;
+    }
+
+    results.forEach(function (r) {
       var cls = r.passed ? 'result-pass' : 'result-fail';
       html += '<div class="test-result ' + cls + '" data-test-id="' + r.test_id + '">';
       html += '<div class="test-result-header">';
@@ -84,6 +91,7 @@
       html += '</div>';
     });
     resultsEl.innerHTML = html;
+    resultsEl.scrollTop = 0;
     resultsEl.querySelectorAll('.test-result-trace').forEach(function (a) {
       a.addEventListener('click', function (e) {
         e.preventDefault();

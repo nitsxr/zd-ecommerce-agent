@@ -500,7 +500,11 @@ body {
 .test-checkbox { flex-shrink: 0; }
 .test-name { font-size: 13px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.tests-results { overflow-y: auto; font-size: 14px; }
+.tests-results {
+  overflow-y: auto;
+  font-size: 14px;
+  min-height: 120px;
+}
 .tests-summary {
   margin-bottom: 16px;
   padding: 12px;
@@ -508,9 +512,11 @@ body {
   border-radius: var(--radius);
   display: flex;
   gap: 16px;
+  flex-wrap: wrap;
 }
 .tests-summary-pass { color: #7ee787; }
 .tests-summary-fail { color: var(--error-text); }
+.tests-summary-total { color: var(--text-muted); }
 .test-result {
   margin-bottom: 12px;
   padding: 12px;

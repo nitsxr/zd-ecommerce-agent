@@ -20,7 +20,7 @@ from schemas.session import SessionState
 logger = get_logger(__name__)
 
 # Regex for order IDs
-ORDER_ID_PATTERN = re.compile(r"ORD-\d{4}", re.IGNORECASE)
+ORDER_ID_PATTERN = re.compile(r"ORD-\d+", re.IGNORECASE)
 
 
 class LLMMemoryOutput(BaseModel):

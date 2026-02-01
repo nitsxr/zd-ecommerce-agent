@@ -1,277 +1,127 @@
 # E-commerce Multi-Agent Assistant
 
-A multi-agent customer service system for e-commerce: order tracking, cancellation (24-hour policy), and product/FAQ answers. Each request is analyzed by an LLM-enhanced Memory Agent, routed by an Orchestrator to the right specialist agent, and state is persisted in Redis for multi-turn conversations.
+**A multi-agent customer service chatbot** for e-commerce: order tracking, cancellations (24-hour policy), and product/FAQ answers. Requests are routed by an LLM orchestrator to specialist agents; state and traces live in Redis. Built for clarity and interview demos.
 
-The stack is **FastAPI** (Python), **Redis** (sessions + traces + stats), **OpenAI** (routing + memory analysis), and a **vanilla JS** web UI (Chat, Trace, Stats, Tests). No frontend build step.
+**Stack:** FastAPI · Redis · OpenAI (routing + memory) · Vanilla JS UI (no build step)
+
+---
+
+## Try it in 2 minutes
+
+```bash
+cp .env.example .env   # set OPENAI_API_KEY
+docker-compose up -d
+curl -s http://localhost:8000/health | jq .
+```
+
+- **Chat UI:** http://localhost:8000/
+- **API docs:** http://localhost:8000/docs
+- **Run all tests:** `curl -s -X POST http://localhost:8000/tests/run-all -H "Content-Type: application/json" -d '{}' | jq '.results | length, [.results[] | {test_id, passed}]'`
+
+Or use the **Tests** tab in the UI: run all scenarios and open a trace for any run.
+
+---
+
+## What it does
+
+| Capability | Example |
+|------------|--------|
+| **Order tracking** | "Where is my order ORD-1234?" / "Track ORD-12345" |
+| **Order cancellation** | "Cancel order ORD-6789" (24h policy; shipped/cancelled orders rejected) |
+| **Product & policies** | "What's your return policy?" / "Shipping times?" |
+| **Multi-turn** | "What's the status of ORD-1234?" → "Cancel that order" (resolves "that order") |
+| **Out of scope** | "What's the weather?" → gentle guide to supported use cases |
+
+Order IDs: `ORD-` + digits (e.g. `ORD-1234`, `ORD-12345`). Mock order API in `tools/order_api.py`; golden tests in `tests/golden/flows.json`.
 
 ---
 
 ## Architecture
 
-```mermaid
-graph TD
-  UI[Web UI]
-  API[FastAPI]
-  Memory[Memory Agent]
-  Orch[Orchestrator]
-  Track[Order Tracking Agent]
-  Cancel[Order Cancellation Agent]
-  Product[Product Info Agent]
-  OrderAPI[Order API]
-  KB[Knowledge Base]
-  Redis[(Redis)]
-
-  UI --> API
-  API --> Memory
-  Memory --> Orch
-  Orch --> Track
-  Orch --> Cancel
-  Orch --> Product
-  Track --> OrderAPI
-  Cancel --> OrderAPI
-  Product --> KB
-  Memory --> Redis
-  API --> Redis
+```
+User → Memory Agent (context, refs) → Orchestrator (LLM intent) → Order Tracking | Order Cancellation | Product Info
+         ↓                                    ↓
+      Redis (sessions)              Low confidence / unknown → gentle "here’s what I can do"
 ```
 
-**Pipeline:** User message → Memory Agent (context, references, sentiment) → Orchestrator (intent) → Specialist agent → Response. Session and trace data are stored in Redis.
+- **Memory Agent:** Resolves references ("that order" → last order_id), sentiment, context summary.
+- **Orchestrator:** Single LLM call for intent + confidence; routes to agents or handles greeting/thanks/unknown.
+- **Specialist agents:** Call Order API or Knowledge Base; return response + tool_calls; update session entities.
+- **Redis:** Session state (history, extracted_entities), traces, stats. Stateless API → scale horizontally.
+
+See `orchestrator/router.py` for routing prompt and examples; `agents/` for specialists; `memory/` for session store.
 
 ---
 
-## Design Decisions
+## Design decisions (for discussion)
 
 | Decision | Rationale |
-|----------|-----------|
-| **Redis for state** | Sessions, traces, and stats need a shared store that supports TTL, listing, and horizontal scaling. Redis is standard for this and keeps the app stateless. |
-| **LLM routing vs keyword** | Keyword routing is brittle for paraphrasing and multi-intent. A small LLM call for intent + confidence gives better UX and handles "track my order ORD-1234" vs "where's my stuff?" and ambiguous prompts. |
-| **Vanilla JS for UI** | No build step, no framework lock-in, and the UI (Chat, Trace, Stats, Tests) stays simple. Easy to hand off or modify. |
+|----------|------------|
+| **LLM routing** | Handles paraphrasing and ambiguous prompts; low confidence triggers gentle guidance instead of wrong agent. |
+| **Redis for state** | Sessions, traces, stats with TTL; single shared store for multiple instances. |
+| **Vanilla JS UI** | No build step; Chat, Trace, Stats, Tests tabs; easy to hand off or modify. |
+| **Structured routing output** | Pydantic `RoutingDecision` (intent, confidence, reasoning) for observability and testing. |
 
 ---
 
-## Multi-turn and state management
+## Project layout
 
-Conversational state is keyed by **`session_id`** and stored in **Redis** (see `memory/redis_store.py`). Each session holds:
-
-- **`conversation_history`** – List of turns (user/assistant messages and which agent replied).
-- **`extracted_entities`** – Order IDs, products, and issues mentioned so far (e.g. for resolving “that order” or “those headphones”).
-
-**Flow per request:**
-
-1. **Load or create session** – GET session by `session_id` from Redis; if missing, create a new `SessionState`.
-2. **Append user message** – Add the current message to `conversation_history`.
-3. **Memory Agent** – Reads full history and `extracted_entities`, resolves references (“that order” → last order_id, “those” → last product), detects sentiment/urgency, and returns a context summary and resolved message.
-4. **Orchestrator** – Uses the Memory context and the (optionally resolved) message to choose intent and route to the right agent.
-5. **Specialist agent** – Runs with the resolved message and session; may call tools (Order API, Knowledge Base) and update `extracted_entities` (e.g. new order_id).
-6. **Save session** – Append assistant response to `conversation_history`, write updated `SessionState` (and entities) back to Redis with TTL.
-
-So multi-turn and state are handled **between** agents by: (1) a single shared `SessionState` in Redis keyed by `session_id`, (2) the Memory Agent resolving references and enriching context before routing, and (3) agents reading/writing `conversation_history` and `extracted_entities` on that session. See `schemas/session.py` for `SessionState`, `ConversationTurn`, and `ExtractedEntities`.
+```
+agents/          # OrderTrackingAgent, OrderCancellationAgent, ProductInfoAgent, MemoryAgent
+orchestrator/    # LLM routing (router.py), OpenAI client (llm_client.py)
+memory/          # Redis session store, session state
+tools/           # Mock order_api.py, knowledge_base.py
+schemas/         # Pydantic models (session, agent, api, tests)
+observability/   # Logging, tracer, stats, middleware
+testing/         # TestScenarioStore, run_test / run_all_tests
+ui/              # Static HTML/JS/CSS (Chat, Trace, Stats, Tests)
+tests/golden/    # flows.json – golden E2E scenarios
+src/main.py      # FastAPI app, /chat, /sessions, /stats, /tests
+```
 
 ---
 
-## Prerequisites
+## Setup (detailed)
 
-- **Docker** and **Docker Compose**
-- **OpenAI API key** (for routing and Memory Agent)
-
----
-
-## Setup
-
-1. **Clone and enter the repo**
-   ```bash
-   cd zd-ecommerce-agent
-   ```
-
-2. **Configure environment**
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env` and set:
-   - `OPENAI_API_KEY` (required)
-   - `OPENAI_MODEL` (default: `gpt-4o-mini`)
-   - `REDIS_URL` (default: `redis://redis:6379` for Docker)
-
-3. **Run with Docker Compose**
-   ```bash
-   docker-compose up -d
-   ```
-   This starts the app and Redis. The app listens on port **8000**.
-
-4. **Verify**
-   ```bash
-   curl -s http://localhost:8000/health
-   ```
-   Expected: `{"status":"healthy","redis":"connected","version":"1.0.0"}`
-
-5. **Open the UI**
-   - Chat: http://localhost:8000/
-   - API docs (Swagger): http://localhost:8000/docs
+1. **Environment:** `cp .env.example .env` and set `OPENAI_API_KEY`, optionally `OPENAI_MODEL` (default `gpt-4o-mini`), `REDIS_URL` (default `redis://redis:6379` for Docker).
+2. **Run:** `docker-compose up -d` → app on port 8000, Redis in container.
+3. **Health:** `curl -s http://localhost:8000/health` → `{"status":"healthy","redis":"connected",...}`.
 
 ---
 
-## API Overview
+## API (summary)
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/health` | Health check (app + Redis). |
-| POST | `/chat` | Send a message; returns assistant response. Body: `{"session_id": "...", "message": "..."}`. |
-| GET | `/sessions` | List recent sessions (`?limit=100`). |
-| GET | `/sessions/{id}` | Session details + full trace. |
-| GET | `/sessions/{id}/trace` | Trace events only. |
-| GET | `/stats` | Aggregate stats (sessions, messages, success rate, latency, tokens, agents). |
-| GET | `/tests` | List test scenarios. |
-| POST | `/tests/{id}/run` | Run one test. |
-| POST | `/tests/run-all` | Run all (or subset). Body (optional): `{"test_ids": ["id1", "id2"]}`. |
-
-### Structured output (JSON) schemas
-
-**Chat request (POST /chat):**
-
-```json
-{
-  "session_id": "string",
-  "message": "string"
-}
-```
-
-**Chat response:**
-
-```json
-{
-  "session_id": "string",
-  "response": "string",
-  "agent": "string",
-  "tool_calls": [
-    {
-      "tool": "string",
-      "input": { "order_id": "ORD-1234" },
-      "result": { "status": "cancelled", "refund_amount": 59.99 },
-      "duration_ms": 12,
-      "success": true,
-      "error": null
-    }
-  ],
-  "handover": "MemoryAgent → OrchestratorAgent → OrderCancellationAgent",
-  "confidence": 0.95,
-  "metadata": {}
-}
-```
-
-**ToolCall** (each entry in `tool_calls`): `tool` (name of the tool, e.g. `OrderAPI.cancel_order`), `input` (parameters sent), `result` (tool output or null), `duration_ms`, `success`, `error` (message if failed). Agents return a single **AgentResponse** (response text, agent name, tool_calls, handover, confidence, metadata); the API wraps it as the Chat response above.
-
-### Example: Chat
-
-```bash
-curl -s -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{"session_id": "demo-1", "message": "Track my order ORD-1234"}' | jq .
-```
-
-### Example: Health
-
-```bash
-curl -s http://localhost:8000/health
-```
-
-### Example: Stats
-
-```bash
-curl -s http://localhost:8000/stats
-```
+| POST | `/chat` | `{"session_id","message"}` → response, agent, tool_calls, handover |
+| GET | `/sessions`, `/sessions/{id}`, `/sessions/{id}/trace` | List sessions, session + trace |
+| GET | `/stats` | Aggregates: sessions, messages, latency, tokens, agents |
+| GET | `/tests` | List scenarios |
+| POST | `/tests/run-all` | Run all or `{"test_ids":["id1",...]}` |
 
 ---
 
-## UI
+## Running tests
 
-- **Chat** – Send messages; session is kept by `session_id` (stored in browser).
-- **Trace** – Pick a session, see timeline of events (memory → routing → agent → tools), click an event for details.
-- **Stats** – Sessions, messages, success rate, latency percentiles, tokens, agent distribution (refreshes every 30s on that tab).
-- **Tests** – Run all or selected golden scenarios; view pass/fail and open the trace for a run.
+- **UI:** Open the **Tests** tab → Run all (or select scenarios) → see pass/fail and "View trace" per run.
+- **CLI:** `curl -s -X POST http://localhost:8000/tests/run-all -H "Content-Type: application/json" -d '{}' | jq .`
+- **Demo script:** `./scripts/demo.sh` (health, chat examples, run-all; optional base URL).
 
----
-
-## How to Extend
-
-### Add a new agent
-
-1. Create `agents/my_agent.py`: subclass `BaseAgent`, implement `process(session, message)` and return an `AgentResponse`.
-2. Register in `src/main.py`: instantiate the agent, then `orchestrator.register_agent("my_intent", my_agent)`.
-3. Update the orchestrator prompt in `orchestrator/router.py`: add the new intent and examples to the system prompt and `RoutingDecision.intent` if needed.
-
-### Add a new tool
-
-1. Add a module under `tools/` (e.g. `tools/inventory.py`) and implement the client (sync or async).
-2. Inject it into the agent that needs it (e.g. in the agent’s `__init__`) and call it from `process()`.
-
-### Change routing logic
-
-- Edit `orchestrator/router.py`: system prompt, few-shot examples, and the `RoutingDecision` schema. Low confidence handling and fallbacks are in `process()` and `_handle_special_intent()`.
+Golden scenarios live in `tests/golden/flows.json`; runner in `testing/runner.py` (POSTs each turn to `/chat`, asserts agent and response content).
 
 ---
 
-## Production Considerations
+## Extending
 
-- **Secrets:** Keep `OPENAI_API_KEY` (and any Redis password) in env or a secret manager; do not commit `.env`.
-- **Redis:** Use a managed Redis with TLS and auth in production; set `REDIS_URL` accordingly.
-- **Scaling:** The app is stateless; scale by running more instances behind a load balancer. Redis is the single shared store for sessions and traces.
-- **Observability:** Logs are JSON with correlation/session IDs. Use `/stats` and `/sessions/{id}/trace` for debugging and monitoring.
-- **Rate limits:** Respect OpenAI rate limits; consider caching or backoff in `orchestrator/llm_client.py` if needed.
+- **New agent:** Subclass `BaseAgent` in `agents/`, implement `process(session, message)` → `AgentResponse`; register in `src/main.py` and add intent + examples in `orchestrator/router.py`.
+- **New tool:** Add under `tools/`, inject into agent, call from `process()`.
+- **Routing changes:** Edit system prompt and few-shot examples in `orchestrator/router.py`; adjust `RoutingDecision` and `_handle_special_intent()` as needed.
 
 ---
 
-## Demo Script
+## Production notes
 
-After `docker-compose up -d` and setting `OPENAI_API_KEY`:
-
-1. **Health**
-   ```bash
-   curl -s http://localhost:8000/health | jq .
-   ```
-
-2. **Order tracking**
-   ```bash
-   curl -s -X POST http://localhost:8000/chat -H "Content-Type: application/json" \
-     -d '{"session_id": "demo", "message": "Track my order ORD-1234"}' | jq '.response, .agent'
-   ```
-
-3. **Cancellation (eligible)**
-   ```bash
-   curl -s -X POST http://localhost:8000/chat -H "Content-Type: application/json" \
-     -d '{"session_id": "demo", "message": "Cancel order ORD-6789"}' | jq '.response, .agent'
-   ```
-
-4. **Multi-turn (reference resolution)**
-   ```bash
-   curl -s -X POST http://localhost:8000/chat -H "Content-Type: application/json" \
-     -d '{"session_id": "demo", "message": "What is the status of ORD-1234?"}' | jq '.response'
-   curl -s -X POST http://localhost:8000/chat -H "Content-Type: application/json" \
-     -d '{"session_id": "demo", "message": "Cancel that order"}' | jq '.response, .agent'
-   ```
-
-5. **Product / FAQ**
-   ```bash
-   curl -s -X POST http://localhost:8000/chat -H "Content-Type: application/json" \
-     -d '{"session_id": "demo", "message": "What is your return policy?"}' | jq '.response, .agent'
-   ```
-
-6. **Fallback (out of scope)**
-   ```bash
-   curl -s -X POST http://localhost:8000/chat -H "Content-Type: application/json" \
-     -d '{"session_id": "demo", "message": "What is the weather?"}' | jq '.response'
-   ```
-
-7. **Run tests**
-   ```bash
-   curl -s -X POST http://localhost:8000/tests/run-all -H "Content-Type: application/json" \
-     -d '{}' | jq '.results | length, [.results[] | {test_id, passed}]'
-   ```
-
-Open http://localhost:8000/ for the Chat UI and http://localhost:8000/docs for the interactive API docs.
-
-**One-liner demo script** (after `docker-compose up -d` and setting `OPENAI_API_KEY`):
-
-```bash
-./scripts/demo.sh
-```
-
-Optional: pass base URL, e.g. `./scripts/demo.sh http://localhost:8000`.
+- Keep `OPENAI_API_KEY` (and Redis auth) in env or a secret manager.
+- Use managed Redis with TLS in production; set `REDIS_URL` accordingly.
+- App is stateless; scale behind a load balancer with shared Redis.
+- Logs are JSON with correlation/session IDs; use `/stats` and `/sessions/{id}/trace` for debugging.

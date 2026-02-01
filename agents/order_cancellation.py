@@ -12,7 +12,7 @@ from tools.order_api import OrderAPI, OrderStatus
 logger = get_logger(__name__)
 
 # Regex pattern for order ID validation
-ORDER_ID_PATTERN = re.compile(r"ORD-\d{4}", re.IGNORECASE)
+ORDER_ID_PATTERN = re.compile(r"ORD-\d+", re.IGNORECASE)
 
 
 class OrderCancellationAgent(BaseAgent):

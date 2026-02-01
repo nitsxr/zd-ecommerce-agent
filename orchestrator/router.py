@@ -60,14 +60,16 @@ Special intents:
 - **escalation** - User wants to speak to a human agent
 - **greeting** - User is saying hello or starting conversation
 - **thanks** - User is expressing gratitude
-- **unknown** - Cannot determine intent or request is out of scope
+- **unknown** - Cannot determine intent, request is out of scope, or not about orders/products (e.g. weather, jokes, other topics). We will gently guide the user to supported use cases.
 
 Guidelines:
-- Look for order IDs in format ORD-XXXX
+- Look for order IDs in format ORD-XXXX (or ORD- plus more digits)
+- If the user is clearly asking about order status, delivery, or "where is my order" (even with a bare number like "1234" or wrong format), route to order_tracking. The agent will ask for the order ID in ORD-XXXX format if needed.
 - If user mentions both tracking AND cancellation, prioritize the action (cancellation)
 - If message is ambiguous, set requires_clarification=true
 - Be conservative with confidence - only use >0.9 for very clear intents
 - For greetings/thanks, respond directly without routing to an agent
+- For clearly off-topic requests (unrelated to orders, products, or support), use intent "unknown" so we can gently suggest what we can help with
 
 Output valid JSON matching the schema."""
 
@@ -95,6 +97,14 @@ Response: {"intent": "escalation", "confidence": 0.95, "reasoning": "User explic
 Example 6:
 User: "Thanks for your help!"
 Response: {"intent": "thanks", "confidence": 0.95, "reasoning": "User expressing gratitude", "extracted_entities": {}, "requires_clarification": false}
+
+Example 7:
+User: "What's the weather today?"
+Response: {"intent": "unknown", "confidence": 0.95, "reasoning": "Request is off-topic; not about orders, products, or support", "extracted_entities": {}, "requires_clarification": false}
+
+Example 8:
+User: "Where is my order 1234?"
+Response: {"intent": "order_tracking", "confidence": 0.9, "reasoning": "User asking about order location/status; ID not in ORD-XXXX format but clearly a tracking request - agent will ask for correct format", "extracted_entities": {}, "requires_clarification": false}
 """
 
 
@@ -208,16 +218,17 @@ class Orchestrator(BaseAgent):
                     metadata={"intent": "unknown", "needs_clarification": True},
                 )
 
+            # Gently guide user to supported use cases when request is out of scope
             return self._create_response(
                 response=(
-                    "I'm your e-commerce assistant and can help with:\n\n"
-                    "• Tracking your orders\n"
-                    "• Cancelling orders (within 24 hours)\n"
-                    "• Answering questions about products and policies\n\n"
-                    "Is there something specific I can help you with?"
+                    "I'm not able to help with that, but I'd be happy to help with things like:\n\n"
+                    "• **Tracking your order** — Check status and delivery (e.g. \"Where is my order ORD-1234?\")\n"
+                    "• **Cancelling an order** — Within 24 hours of purchase (e.g. \"Cancel order ORD-5678\")\n"
+                    "• **Product and policy questions** — Returns, shipping, warranty, FAQs\n\n"
+                    "What would you like to do?"
                 ),
                 confidence=decision.confidence,
-                metadata={"intent": "unknown", "routing": "fallback"},
+                metadata={"intent": "unknown", "routing": "out_of_scope_guide"},
             )
 
         return None
@@ -283,6 +294,27 @@ class Orchestrator(BaseAgent):
             duration_ms=routing_duration_ms,
             tokens=token_usage.get("total_tokens", 0),
         )
+
+        # If we got an agent intent but confidence is low, treat as unknown and guide user
+        CONFIDENCE_THRESHOLD = 0.5
+        agent_intents = {"order_tracking", "order_cancellation", "product_info"}
+        if (
+            decision.intent in agent_intents
+            and decision.confidence < CONFIDENCE_THRESHOLD
+        ):
+            logger.info(
+                "Low confidence for agent intent; guiding to supported use cases",
+                intent=decision.intent,
+                confidence=decision.confidence,
+            )
+            decision = RoutingDecision(
+                intent="unknown",
+                confidence=decision.confidence,
+                reasoning=f"Low confidence ({decision.confidence}) for {decision.intent}; guiding user",
+                extracted_entities=decision.extracted_entities,
+                requires_clarification=False,
+                clarification_question=None,
+            )
 
         # Handle special intents
         special_response = self._handle_special_intent(decision.intent, decision)
