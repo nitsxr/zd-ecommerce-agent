@@ -121,12 +121,18 @@ flowchart LR
 
 ## API
 
-- **POST /chat**  
+- **POST /chat** (Chat)  
   - Request: `{ "session_id": "string", "message": "string" }`  
   - Response: `{ "response": "string", "agent": "string", "tool_calls": [...], "handover": "string" }`  
-  - See challenge spec and OpenAPI (when available) for full payloads.
+  - See [challenge.md](challenge.md) and OpenAPI for full payloads.
 
-- **Session APIs** (read-only): To be added (e.g. get session state for debug).
+- **GET /sessions/{session_id}** (Sessions, read-only)  
+  - Returns session summary: `session_id`, `turn_count`, `extracted_entities`, `slot_state`. 404 if not found.
+
+- **GET /sessions/{session_id}/turns** (Sessions, read-only)  
+  - Returns `{ "session_id": "...", "turns": [...] }`. Each turn: `user_message`, `agent`, `response`, `handover`, `tool_calls`. 404 if session not found.
+
+**OpenAPI**: Swagger UI at `/docs`, ReDoc at `/redoc`. API version: 1.0.0.
 
 ---
 
@@ -147,12 +153,14 @@ Validation rules (order ID format, 24h rule, timestamps): [schemas/validation_ru
 
 ## Run Instructions
 
-- **Local**: From repo root, install dependencies (`pip install -r requirements.txt`), then run the API:
+- **Local (one command after install)**  
+  From repo root:
   ```bash
+  pip install -r requirements.txt
   PYTHONPATH=. uvicorn src.main:app --reload
   ```
-  Use `POST /chat` with body `{ "session_id": "<id>", "message": "<text>" }`. Session state: **Redis** when `REDIS_URL` is set (e.g. `redis://localhost:6379/0`), else **in-memory**. For stateless API pods and session recovery, set `REDIS_URL`. Optional: `REDIS_SESSION_TTL_SECONDS` (default 86400 = 24h) for key TTL/eviction.
-- **Docker**: `docker-compose up` to run API + Redis (+ UI if present). See Dockerfile and docker-compose.yml in later milestones (M9).
+  Then open `http://127.0.0.1:8000/docs` for Swagger UI. Use `POST /chat` with body `{ "session_id": "<id>", "message": "<text>" }`. Session state: **Redis** when `REDIS_URL` is set (e.g. `redis://localhost:6379/0`), else **in-memory**. Optional: `REDIS_SESSION_TTL_SECONDS` (default 86400 = 24h).
+- **Docker**: `docker-compose up` to run API + Redis. See M9 (Dockerfile, docker-compose.yml).
 
 ---
 
