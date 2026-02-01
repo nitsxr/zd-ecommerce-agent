@@ -20,6 +20,7 @@ class StatsCollector:
         self._key_counters = "stats:counters"
         self._key_latencies = "stats:latencies"
         self._key_agents = "stats:agents"
+        self._key_sentiment = "stats:sentiment"
         self._max_latencies = 10000  # Keep last N for percentiles
 
     async def _get_client(self) -> redis.Redis:
@@ -42,6 +43,7 @@ class StatsCollector:
         success: bool,
         agent: str | None,
         tokens_used: int = 0,
+        sentiment_label: str | None = None,
     ) -> None:
         """Record one chat request for stats."""
         try:
@@ -58,6 +60,9 @@ class StatsCollector:
 
             if agent:
                 pipe.hincrby(self._key_agents, agent, 1)
+
+            if sentiment_label:
+                pipe.hincrby(self._key_sentiment, sentiment_label, 1)
 
             await pipe.execute()
         except RedisError as e:
@@ -77,6 +82,7 @@ class StatsCollector:
             client = await self._get_client()
             counters = await client.hgetall(self._key_counters)
             agents = await client.hgetall(self._key_agents)
+            sentiment = await client.hgetall(self._key_sentiment)
             raw_latencies = await client.lrange(self._key_latencies, 0, -1)
 
             total_messages = int(counters.get("total_messages", 0))
@@ -99,6 +105,7 @@ class StatsCollector:
                 p99 = latencies[int(n * 0.99)] if n > 1 else (latencies[0] if latencies else 0)
 
             agent_distribution = {k: int(v) for k, v in (agents or {}).items()}
+            sentiment_distribution = {k: int(v) for k, v in (sentiment or {}).items()}
 
             return {
                 "total_sessions": total_sessions,
@@ -110,6 +117,7 @@ class StatsCollector:
                 "p99_latency_ms": p99,
                 "tokens_used": total_tokens,
                 "agent_distribution": agent_distribution,
+                "sentiment_distribution": sentiment_distribution,
             }
         except RedisError as e:
             logger.error("Stats get failed", error=str(e))
@@ -123,4 +131,5 @@ class StatsCollector:
                 "p99_latency_ms": 0,
                 "tokens_used": 0,
                 "agent_distribution": {},
+                "sentiment_distribution": {},
             }

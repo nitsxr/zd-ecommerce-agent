@@ -20,6 +20,11 @@
       .slice(0, 10)
       .map(function (e) { return '<tr><td>' + e[0] + '</td><td>' + e[1] + '</td></tr>'; })
       .join('');
+    var sentiment = data.sentiment_distribution || {};
+    var sentimentRows = Object.entries(sentiment)
+      .sort(function (a, b) { return b[1] - a[1]; })
+      .map(function (e) { return '<tr><td>' + e[0] + '</td><td>' + e[1] + '</td></tr>'; })
+      .join('');
     var totalMessages = data.total_messages ?? 0;
     var totalSessions = data.total_sessions ?? 0;
     var noData = totalMessages === 0 && totalSessions === 0;
@@ -38,6 +43,10 @@
       '<div class="stats-agents">' +
         '<h3 class="stats-subtitle">Agent distribution</h3>' +
         '<table class="stats-table"><thead><tr><th>Agent</th><th>Count</th></tr></thead><tbody>' + (agentRows || '<tr><td colspan="2">No data</td></tr>') + '</tbody></table>' +
+      '</div>' +
+      '<div class="stats-sentiment">' +
+        '<h3 class="stats-subtitle">User sentiment</h3>' +
+        '<table class="stats-table"><thead><tr><th>Sentiment</th><th>Count</th></tr></thead><tbody>' + (sentimentRows || '<tr><td colspan="2">No data yet</td></tr>') + '</tbody></table>' +
       '</div>';
   }
 

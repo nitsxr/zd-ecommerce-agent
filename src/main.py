@@ -299,6 +299,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
             success=True,
             agent=agent_response.agent,
             tokens_used=tokens_used,
+            sentiment_label=memory_analysis.sentiment.label,
         )
 
         # Include memory analysis in response metadata
