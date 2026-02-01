@@ -16,7 +16,7 @@ open http://localhost:8000  # Chat UI
 
 | Chat | Trace |
 |------|-------|
-| ![Chat](screens/chat.png) | ![Trace](screens/trace.png) |
+| ![Chat](screens/chat_updated.png) | ![Trace](screens/trace.png) |
 
 | Stats | Tests |
 |-------|-------|
