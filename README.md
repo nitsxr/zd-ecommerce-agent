@@ -79,7 +79,7 @@ So multi-turn and state are handled **between** agents by: (1) a single shared `
 
 1. **Clone and enter the repo**
    ```bash
-   cd zendesk
+   cd zd-ecommerce-agent
    ```
 
 2. **Configure environment**
