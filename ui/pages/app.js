@@ -14,6 +14,7 @@
   const chatRoot = document.getElementById("chat-panel-root");
   const conversationRoot = document.getElementById("conversation-root");
   const traceRoot = document.getElementById("trace-root");
+  const e2eRoot = document.getElementById("e2e-scenarios-root");
 
   function setError(msg) {
     state.error = msg;
@@ -60,6 +61,7 @@
     renderChatPanel(chatRoot, state, sendMessage, loadSession);
     renderConversationTimeline(conversationRoot, state.turns);
     renderTraceInspector(traceRoot, state.traces);
+    if (e2eRoot) renderE2EScenarios(e2eRoot, loadSession);
   }
 
   render();

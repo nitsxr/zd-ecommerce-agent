@@ -285,15 +285,15 @@ Deliver a **scalable, observable, multi-agent conversational system** with a **t
 
 ## Milestone 10 — Validation & Review
 
-**Status:** Final Gate
+**Status:** Done
 **Owner:** Lead
 
 ### Tasks
 
-* [ ] End-to-end test scenarios
-* [ ] Multi-turn conversation tests
-* [ ] Failure mode tests
-* [ ] Architecture review against requirements
+* [x] End-to-end test scenarios (keyword + LLM paths; reviewable E2E in Chat UI)
+* [x] Multi-turn conversation tests
+* [x] Failure mode tests (404, 422, 24h rule)
+* [x] Architecture review against requirements (docs/ARCHITECTURE_REVIEW.md)
 
 ### Acceptance Criteria
 

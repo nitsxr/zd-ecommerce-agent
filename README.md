@@ -135,7 +135,7 @@ flowchart LR
 - **GET /sessions/{session_id}/traces** (Sessions, read-only)  
   - Returns `{ "session_id": "...", "traces": [...] }`. Trace events aligned by turn_index for debug. 200 with empty list if no traces.
 
-**Chat UI**: `http://localhost:8000/ui/` (or `/` redirects to `/ui/`). Send messages, load session, view conversation timeline and trace inspector side-by-side.
+**Chat UI**: `http://localhost:8000/ui/` (or `/` redirects to `/ui/`). Send messages, load session, view conversation timeline and trace inspector side-by-side. **E2E Scenarios** panel: run reviewable E2E scenarios (cancel, track, product, multi-turn, clarification, 24h rule) and view pass/fail and conversation.
 
 **OpenAPI**: Swagger UI at `/docs`, ReDoc at `/redoc`. API version: 1.0.0.
 
@@ -156,8 +156,21 @@ Validation rules (order ID format, 24h rule, timestamps): [schemas/validation_ru
 
 ---
 
+## LLM-based orchestrator
+
+Intent, slots, and clarification can be driven by an LLM (OpenAI) or a **mock** (no API key). See [Plan-LLM.md](Plan-LLM.md) and [docs/LLM_ORCHESTRATOR_DESIGN.md](docs/LLM_ORCHESTRATOR_DESIGN.md).
+
+- **USE_LLM_ORCHESTRATOR** (default `false`): when `true`, use LLM (or mock) for intent/slots/clarification; otherwise use keyword orchestrator.
+- **MOCK_LLM** (default `true`): when `true`, LLM path uses a keyword-based mock instead of calling OpenAI. Set to `false` and provide **OPENAI_API_KEY** to use the real API.
+- **OPENAI_MODEL**: e.g. `gpt-3.5-turbo` (default; used only when `MOCK_LLM=false`).
+
+Traces include `orchestrator_type`: `"llm"` or `"keyword"`. On LLM failure, the engine falls back to the keyword path. Multi-turn and state management with the LLM are described in [docs/MULTI_TURN_AND_LLM.md](docs/MULTI_TURN_AND_LLM.md).
+
+---
+
 ## Run Instructions
 
+- **Tests:** From repo root, `pytest tests/` (or `python -m pytest tests/`). E2E tests use in-memory store and mock LLM; see [tests/e2e/test_llm_orchestrator.py](tests/e2e/test_llm_orchestrator.py).
 - **Local (one command after install)**  
   From repo root:
   ```bash
