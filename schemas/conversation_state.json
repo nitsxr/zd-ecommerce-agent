@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ecommerce-assistant/schemas/conversation_state.json",
+  "title": "ConversationState",
+  "description": "Session state keyed by session_id: turns, extracted entities, slot state for multi-turn context.",
+  "type": "object",
+  "required": ["session_id", "turns"],
+  "additionalProperties": false,
+  "properties": {
+    "session_id": {
+      "type": "string",
+      "description": "Unique session identifier"
+    },
+    "turns": {
+      "type": "array",
+      "description": "Conversation history: one entry per user message + assistant response",
+      "items": {
+        "type": "object",
+        "required": ["user_message", "agent", "response", "handover"],
+        "properties": {
+          "user_message": { "type": "string" },
+          "agent": { "type": "string" },
+          "tool_calls": {
+            "type": "array",
+            "items": { "$ref": "./tool_call.json" }
+          },
+          "response": { "type": "string" },
+          "handover": {
+            "type": "string",
+            "description": "E.g. OrchestratorAgent → OrderCancellationAgent"
+          }
+        }
+      }
+    },
+    "extracted_entities": {
+      "type": "object",
+      "description": "Last mentioned entities for multi-turn resolution (e.g. that → order_id)",
+      "additionalProperties": true,
+      "properties": {
+        "order_id": { "type": "string" },
+        "product": { "type": "string" }
+      }
+    },
+    "slot_state": {
+      "type": "object",
+      "description": "Current slot-filling state (e.g. awaiting order_id)",
+      "additionalProperties": true,
+      "properties": {
+        "awaiting": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

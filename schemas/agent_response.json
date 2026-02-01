@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ecommerce-assistant/schemas/agent_response.json",
+  "title": "AgentResponse",
+  "description": "Structured output from a business agent. No free-text-only outputs.",
+  "type": "object",
+  "required": ["agent", "message"],
+  "additionalProperties": false,
+  "properties": {
+    "agent": {
+      "type": "string",
+      "description": "Name of the agent that produced this response",
+      "enum": ["OrderCancellationAgent", "OrderTrackingAgent", "ProductInfoAgent"]
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable response to the user"
+    },
+    "success": {
+      "type": "boolean",
+      "description": "Whether the operation succeeded (optional, for cancel/track)"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if success is false or operation failed"
+    },
+    "slots_to_fill": {
+      "type": "array",
+      "description": "Slot names the orchestrator should collect before re-invoking (e.g. order_id)",
+      "items": { "type": "string" }
+    },
+    "tool_calls": {
+      "type": "array",
+      "description": "Tool invocations performed by this agent",
+      "items": { "$ref": "tool_call.json" }
+    }
+  }
+}

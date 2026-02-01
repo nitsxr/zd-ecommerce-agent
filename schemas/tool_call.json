@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://ecommerce-assistant/schemas/tool_call.json",
+  "title": "ToolCall",
+  "description": "Single tool invocation: name, input, and result. Aligns with challenge response payload.",
+  "type": "object",
+  "required": ["tool", "input"],
+  "additionalProperties": false,
+  "properties": {
+    "tool": {
+      "type": "string",
+      "description": "Tool name (e.g. OrderCancellationAPI, TrackingAPI, KnowledgeBase)"
+    },
+    "input": {
+      "type": "object",
+      "description": "Input payload passed to the tool (e.g. { \"orderId\": \"ORD-4567\" })",
+      "additionalProperties": true
+    },
+    "result": {
+      "type": "object",
+      "description": "Result returned by the tool (e.g. { \"status\": \"cancelled\", \"refunded\": true })",
+      "additionalProperties": true
+    }
+  }
+}
