@@ -151,7 +151,7 @@ Validation rules (order ID format, 24h rule, timestamps): [schemas/validation_ru
   ```bash
   PYTHONPATH=. uvicorn src.main:app --reload
   ```
-  Use `POST /chat` with body `{ "session_id": "<id>", "message": "<text>" }`. Session state is in-memory (M3 will add Redis). Orchestrator (M2) handles intent detection, routing, slot validation, and stub agent responses.
+  Use `POST /chat` with body `{ "session_id": "<id>", "message": "<text>" }`. Session state: **Redis** when `REDIS_URL` is set (e.g. `redis://localhost:6379/0`), else **in-memory**. For stateless API pods and session recovery, set `REDIS_URL`. Optional: `REDIS_SESSION_TTL_SECONDS` (default 86400 = 24h) for key TTL/eviction.
 - **Docker**: `docker-compose up` to run API + Redis (+ UI if present). See Dockerfile and docker-compose.yml in later milestones (M9).
 
 ---
