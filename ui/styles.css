@@ -336,12 +336,20 @@ body {
 .session-row-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
 /* Timeline */
-.timeline-panel { flex: 1; min-height: 200px; overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.timeline-panel {
+  flex: 0 1 auto;
+  max-height: 50vh;
+  min-height: 120px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
 .trace-timeline {
-  flex: 1;
+  flex: 0 0 auto;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 8px 0;
+  padding: 8px 0 16px 0;
   display: flex;
   flex-direction: column;
   gap: 4px;
