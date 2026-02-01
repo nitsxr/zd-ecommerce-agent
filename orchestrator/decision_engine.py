@@ -9,8 +9,10 @@ import re
 import time
 import uuid
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import Any
 
+from agents import order_cancellation, order_tracking, product_info
 from orchestrator.intent import Intent, detect_intent, extract_order_id
 from orchestrator.router import route as route_intent
 from orchestrator.state_machine import ConversationState, create_empty_state
@@ -34,31 +36,36 @@ class ChatResult:
     trace: dict[str, Any] = field(default_factory=dict)
 
 
-def _stub_invoke_agent(
+def _invoke_agent(
     agent_name: str,
     order_id: str | None = None,
     message: str = "",
 ) -> tuple[str, list[dict[str, Any]]]:
     """
-    Stub agent invocation for M2. M4 will replace with real agents and tools.
-    Returns (response_text, tool_calls).
+    Invoke real agent (M4). Agents are stateless; they call tools and return (response_text, tool_calls).
+    On validation error, return error message and tool_calls with error result (fail loudly but gracefully).
     """
-    if agent_name == "OrderCancellationAgent":
-        return (
-            f"I'll process your cancellation request for order {order_id or 'N/A'}. (Cancellation agent not yet implemented.)",
-            [{"tool": "OrderCancellationAPI", "input": {"orderId": order_id or ""}, "result": None}],
-        )
-    if agent_name == "OrderTrackingAgent":
-        return (
-            f"I'll look up the status for order {order_id or 'N/A'}. (Tracking agent not yet implemented.)",
-            [{"tool": "TrackingAPI", "input": {"orderId": order_id or ""}, "result": None}],
-        )
-    if agent_name == "ProductInfoAgent":
-        return (
-            f"I'll look up information for: \"{message[:80] or 'your question'}\". (Product info agent not yet implemented.)",
-            [{"tool": "KnowledgeBase", "input": {"query": message}, "result": None}],
-        )
-    return "I'm not sure how to help with that. You can ask to cancel or track an order (use format ORD-1234), or ask a product question.", []
+    try:
+        if agent_name == "OrderCancellationAgent":
+            return order_cancellation.run(order_id or "")
+        if agent_name == "OrderTrackingAgent":
+            return order_tracking.run(order_id or "")
+        if agent_name == "ProductInfoAgent":
+            return product_info.run(message or "")
+    except ValueError as e:
+        err_msg = str(e)
+        tool_calls = [
+            {
+                "tool": "OrchestratorAgent",
+                "input": {"order_id": order_id, "message": message},
+                "result": {"error": err_msg},
+            }
+        ]
+        return f"Sorry, I couldn't process that: {err_msg}", tool_calls
+    return (
+        "I'm not sure how to help with that. You can ask to cancel or track an order (use format ORD-1234), or ask a product question.",
+        [],
+    )
 
 
 def run_turn(
@@ -106,6 +113,7 @@ def run_turn(
                 "request_id": request_id,
                 "session_id": session_id,
                 "turn_index": state.turn_index - 1,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "intent": intent,
                 "selected_agent": "OrchestratorAgent",
                 "latency_ms": round(latency_ms, 2),
@@ -135,6 +143,7 @@ def run_turn(
                 "request_id": request_id,
                 "session_id": session_id,
                 "turn_index": state.turn_index - 1,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "intent": intent,
                 "selected_agent": "OrchestratorAgent",
                 "latency_ms": round(latency_ms, 2),
@@ -142,10 +151,10 @@ def run_turn(
             },
         )
 
-    # 5. Invoke agent (stub for M2)
+    # 5. Invoke agent (M4: real agents and tools)
     if needs_order_id:
         state.clear_slot_state()
-    response_text, tool_calls = _stub_invoke_agent(agent_name, order_id=order_id, message=message)
+    response_text, tool_calls = _invoke_agent(agent_name, order_id=order_id, message=message)
     handover_str = f"OrchestratorAgent → {agent_name}"
 
     # 6. Persist turn
@@ -163,6 +172,7 @@ def run_turn(
         "request_id": request_id,
         "session_id": session_id,
         "turn_index": state.turn_index - 1,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
         "intent": intent,
         "selected_agent": agent_name,
         "tool_calls_summary": [{"tool": tc.get("tool", ""), "success": tc.get("result") is not None} for tc in tool_calls],

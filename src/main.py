@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from memory.session_store import default_store
+from observability.tracer import emit_trace
 from orchestrator.decision_engine import run_turn
 
 app = FastAPI(
@@ -43,6 +44,7 @@ def chat(request: ChatRequest) -> ChatResponse:
         message=request.message,
         store=default_store,
     )
+    emit_trace(result.trace)
     return ChatResponse(
         response=result.response,
         agent=result.agent,
