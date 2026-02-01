@@ -149,10 +149,10 @@ Validation rules (order ID format, 24h rule, timestamps): [schemas/validation_ru
 
 - **Local**: From repo root, install dependencies (`pip install -r requirements.txt`), then run the API:
   ```bash
-  uvicorn src.main:app --reload
+  PYTHONPATH=. uvicorn src.main:app --reload
   ```
-  Use `POST /chat` with body `{ "session_id": "<id>", "message": "<text>" }`. Redis and full orchestrator will be wired in later milestones; the endpoint currently returns 501.
-- **Docker**: `docker-compose up` to run API + Redis (+ UI if present). See Dockerfile and docker-compose.yml in later milestones.
+  Use `POST /chat` with body `{ "session_id": "<id>", "message": "<text>" }`. Session state is in-memory (M3 will add Redis). Orchestrator (M2) handles intent detection, routing, slot validation, and stub agent responses.
+- **Docker**: `docker-compose up` to run API + Redis (+ UI if present). See Dockerfile and docker-compose.yml in later milestones (M9).
 
 ---
 

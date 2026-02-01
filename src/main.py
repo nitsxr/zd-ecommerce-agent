@@ -1,11 +1,12 @@
 """
-Minimal FastAPI app exposing POST /chat.
-Stub implementation: returns 501 and reads session_id + message.
-Orchestrator and agents will be wired in later milestones.
+FastAPI app exposing POST /chat.
+Orchestrator (M2) handles intent detection, routing, slot validation, and stub agent invocation.
 """
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+
+from memory.session_store import default_store
+from orchestrator.decision_engine import run_turn
 
 app = FastAPI(
     title="Multi-Agent E-commerce Assistant",
@@ -31,17 +32,20 @@ class ChatResponse(BaseModel):
     handover: str
 
 
-@app.post("/chat")
-def chat(request: ChatRequest):
+@app.post("/chat", response_model=ChatResponse)
+def chat(request: ChatRequest) -> ChatResponse:
     """
     Accept user message and session_id; return system response.
-    Stub: returns 501 Not Implemented until orchestrator is wired.
+    Orchestrator: intent -> route -> validate slots -> clarify or invoke agent -> persist state.
     """
-    # Stub: read session_id and message, return 501 with challenge-shaped body
-    payload = {
-        "response": "Chat endpoint is not yet implemented. Orchestrator will be wired in a later milestone.",
-        "agent": "OrchestratorAgent",
-        "tool_calls": [],
-        "handover": "OrchestratorAgent",
-    }
-    return JSONResponse(status_code=501, content=payload)
+    result = run_turn(
+        session_id=request.session_id,
+        message=request.message,
+        store=default_store,
+    )
+    return ChatResponse(
+        response=result.response,
+        agent=result.agent,
+        tool_calls=[ToolCallPayload(tool=tc["tool"], input=tc["input"], result=tc.get("result")) for tc in result.tool_calls],
+        handover=result.handover,
+    )
