@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>E-commerce Assistant</title>
+  <link rel="stylesheet" href="/ui/styles.css">
+</head>
+<body>
+  <header class="header">
+    <h1 class="header-title">E-commerce Assistant</h1>
+    <div class="header-actions">
+      <nav class="tabs" role="tablist">
+        <button type="button" id="tab-chat" class="tab active" role="tab" aria-selected="true">Chat</button>
+        <button type="button" id="tab-trace" class="tab" role="tab" aria-selected="false">Trace</button>
+        <button type="button" id="tab-stats" class="tab" role="tab" aria-selected="false">Stats</button>
+        <button type="button" id="tab-tests" class="tab" role="tab" aria-selected="false">Tests</button>
+      </nav>
+      <button type="button" id="btn-new-chat" class="btn btn-secondary" title="Start new conversation">New conversation</button>
+      <span class="session-id" id="session-id" title="Session ID">—</span>
+    </div>
+  </header>
+
+  <main class="main">
+    <section id="view-chat" class="view view-active" aria-hidden="false">
+      <section class="panel chat-panel" aria-label="Chat">
+        <div class="chat-messages" id="chat-messages" role="log" aria-live="polite"></div>
+        <div class="chat-input-wrap">
+          <div class="chat-error-wrap" id="chat-error-wrap" hidden>
+            <span id="chat-error"></span>
+            <button type="button" id="btn-retry" class="btn btn-secondary btn-sm">Try again</button>
+          </div>
+          <div class="chat-input-row">
+            <textarea id="chat-input" class="chat-input" placeholder="Ask about orders, cancellations, or products…" rows="1" maxlength="2000" aria-label="Message"></textarea>
+            <button type="button" id="btn-send" class="btn btn-primary" aria-label="Send message">Send</button>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section id="view-trace" class="view" aria-hidden="true">
+      <div class="trace-layout">
+        <aside class="panel session-list-panel">
+          <h2 class="panel-title">Sessions</h2>
+          <input type="text" id="trace-search" class="trace-search" placeholder="Filter by session ID" aria-label="Filter sessions">
+          <div id="session-list" class="session-list"></div>
+        </aside>
+        <div class="trace-main">
+          <div class="panel timeline-panel">
+            <h2 class="panel-title">Trace timeline</h2>
+            <div id="trace-timeline" class="trace-timeline"></div>
+          </div>
+          <div class="panel inspector-panel">
+            <h2 class="panel-title">Event details</h2>
+            <div id="trace-inspector" class="trace-inspector"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-stats" class="view" aria-hidden="true">
+      <div class="panel stats-panel">
+        <h2 class="panel-title">System stats</h2>
+        <div id="stats-dashboard" class="stats-dashboard"></div>
+      </div>
+    </section>
+
+    <section id="view-tests" class="view" aria-hidden="true">
+      <div class="tests-layout">
+        <aside class="panel tests-list-panel">
+          <h2 class="panel-title">Test scenarios</h2>
+          <div class="tests-actions">
+            <button type="button" id="btn-run-all" class="btn btn-primary">Run all</button>
+            <button type="button" id="btn-run-selected" class="btn btn-secondary">Run selected</button>
+          </div>
+          <div id="tests-list" class="tests-list"></div>
+        </aside>
+        <div class="panel tests-results-panel">
+          <h2 class="panel-title">Results</h2>
+          <div id="tests-results" class="tests-results"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/ui/services/api.js"></script>
+  <script src="/ui/components/chat-panel.js"></script>
+  <script src="/ui/components/tabs.js"></script>
+  <script src="/ui/components/session-list.js"></script>
+  <script src="/ui/components/conversation-timeline.js"></script>
+  <script src="/ui/components/trace-inspector.js"></script>
+  <script src="/ui/components/stats-dashboard.js"></script>
+  <script src="/ui/components/test-runner.js"></script>
+</body>
+</html>

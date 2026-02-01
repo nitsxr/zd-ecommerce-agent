@@ -1,0 +1,148 @@
+[
+  {
+    "id": "flow-1",
+    "name": "Track order (happy path)",
+    "description": "Valid order ID returns status",
+    "turns": [
+      {"message": "Track my order ORD-1234", "expect_agent": "OrderTrackingAgent", "expect_contains": "ORD-1234"}
+    ]
+  },
+  {
+    "id": "flow-2",
+    "name": "Invalid order ID format",
+    "description": "No ORD-XXXX format, ask for order ID",
+    "turns": [
+      {"message": "Where is my order 1234?", "expect_agent": "OrderTrackingAgent", "expect_contains": "order ID"}
+    ]
+  },
+  {
+    "id": "flow-3",
+    "name": "Order not found",
+    "description": "Valid format but unknown order",
+    "turns": [
+      {"message": "Track ORD-9999", "expect_agent": "OrderTrackingAgent", "expect_contains": "couldn't find"}
+    ]
+  },
+  {
+    "id": "flow-4",
+    "name": "Cancel order (happy path)",
+    "description": "Eligible order cancelled",
+    "turns": [
+      {"message": "Cancel order ORD-6789", "expect_agent": "OrderCancellationAgent", "expect_contains": "cancelled"}
+    ]
+  },
+  {
+    "id": "flow-5",
+    "name": "Order too old (24hr policy)",
+    "description": "Order outside 24hr window",
+    "turns": [
+      {"message": "Cancel order ORD-2345", "expect_agent": "OrderCancellationAgent", "expect_contains": "24 hour"}
+    ]
+  },
+  {
+    "id": "flow-6",
+    "name": "Order already shipped",
+    "description": "Cannot cancel shipped order",
+    "turns": [
+      {"message": "Cancel order ORD-3456", "expect_agent": "OrderCancellationAgent", "expect_contains": "shipped"}
+    ]
+  },
+  {
+    "id": "flow-7",
+    "name": "Order already cancelled",
+    "description": "Inform user order already cancelled",
+    "turns": [
+      {"message": "Cancel ORD-4567", "expect_agent": "OrderCancellationAgent", "expect_contains": "already been cancelled"}
+    ]
+  },
+  {
+    "id": "flow-8",
+    "name": "Cancel with no order ID",
+    "description": "Ask for order ID",
+    "turns": [
+      {"message": "I want to cancel my order", "expect_agent": "OrderCancellationAgent", "expect_contains": "order ID"}
+    ]
+  },
+  {
+    "id": "flow-9",
+    "name": "Return policy FAQ",
+    "description": "Product info agent answers",
+    "turns": [
+      {"message": "What is your return policy?", "expect_agent": "ProductInfoAgent", "expect_contains": "return"}
+    ]
+  },
+  {
+    "id": "flow-10",
+    "name": "Shipping times FAQ",
+    "description": "Product info agent",
+    "turns": [
+      {"message": "How long does shipping take?", "expect_agent": "ProductInfoAgent", "expect_contains": "shipping"}
+    ]
+  },
+  {
+    "id": "flow-11",
+    "name": "Product-specific question",
+    "description": "Product info",
+    "turns": [
+      {"message": "Tell me about wireless headphones", "expect_agent": "ProductInfoAgent"}
+    ]
+  },
+  {
+    "id": "flow-12",
+    "name": "Track then cancel same order",
+    "description": "Reference resolution: that order",
+    "turns": [
+      {"message": "What is the status of ORD-1234?", "expect_agent": "OrderTrackingAgent"},
+      {"message": "Cancel that order", "expect_agent": "OrderCancellationAgent", "expect_contains": "cancelled"}
+    ]
+  },
+  {
+    "id": "flow-13",
+    "name": "Product info then order action",
+    "description": "Those = product reference",
+    "turns": [
+      {"message": "Tell me about wireless headphones", "expect_agent": "ProductInfoAgent"},
+      {"message": "What's the return policy for those?", "expect_agent": "ProductInfoAgent"}
+    ]
+  },
+  {
+    "id": "flow-17",
+    "name": "Out of scope (fallback)",
+    "description": "Unknown intent",
+    "turns": [
+      {"message": "What's the weather today?", "expect_contains": "help"}
+    ]
+  },
+  {
+    "id": "flow-18",
+    "name": "Ambiguous request",
+    "description": "Ask for clarification",
+    "turns": [
+      {"message": "I have a problem with my order", "expect_contains": "help"}
+    ]
+  },
+  {
+    "id": "flow-20",
+    "name": "Empty message",
+    "description": "Helpful prompt",
+    "turns": [
+      {"message": "   ", "expect_contains": "help"}
+    ]
+  },
+  {
+    "id": "flow-23",
+    "name": "Escalation request",
+    "description": "Contact options",
+    "turns": [
+      {"message": "I want to speak to a real person", "expect_contains": "human"}
+    ]
+  },
+  {
+    "id": "flow-24",
+    "name": "Positive feedback",
+    "description": "Graceful acknowledgment",
+    "turns": [
+      {"message": "Thank you!", "expect_contains": "welcome"}
+    ]
+  }
+]
