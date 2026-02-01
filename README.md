@@ -160,7 +160,12 @@ Validation rules (order ID format, 24h rule, timestamps): [schemas/validation_ru
   PYTHONPATH=. uvicorn src.main:app --reload
   ```
   Then open `http://127.0.0.1:8000/docs` for Swagger UI. Use `POST /chat` with body `{ "session_id": "<id>", "message": "<text>" }`. Session state: **Redis** when `REDIS_URL` is set (e.g. `redis://localhost:6379/0`), else **in-memory**. Optional: `REDIS_SESSION_TTL_SECONDS` (default 86400 = 24h).
-- **Docker**: `docker-compose up` to run API + Redis. See M9 (Dockerfile, docker-compose.yml).
+- **Docker (one command)**  
+  From repo root:
+  ```bash
+  docker-compose up
+  ```
+  Builds the API image and starts Redis + API. API: `http://localhost:8000`, Swagger: `http://localhost:8000/docs`. Session state is stored in Redis. Optional: copy `.env.example` to `.env` and set `REDIS_URL`, `REDIS_SESSION_TTL_SECONDS` for local overrides.
 
 ---
 
