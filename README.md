@@ -132,6 +132,11 @@ flowchart LR
 - **GET /sessions/{session_id}/turns** (Sessions, read-only)  
   - Returns `{ "session_id": "...", "turns": [...] }`. Each turn: `user_message`, `agent`, `response`, `handover`, `tool_calls`. 404 if session not found.
 
+- **GET /sessions/{session_id}/traces** (Sessions, read-only)  
+  - Returns `{ "session_id": "...", "traces": [...] }`. Trace events aligned by turn_index for debug. 200 with empty list if no traces.
+
+**Chat UI**: `http://localhost:8000/ui/` (or `/` redirects to `/ui/`). Send messages, load session, view conversation timeline and trace inspector side-by-side.
+
 **OpenAPI**: Swagger UI at `/docs`, ReDoc at `/redoc`. API version: 1.0.0.
 
 ---
@@ -159,13 +164,13 @@ Validation rules (order ID format, 24h rule, timestamps): [schemas/validation_ru
   pip install -r requirements.txt
   PYTHONPATH=. uvicorn src.main:app --reload
   ```
-  Then open `http://127.0.0.1:8000/docs` for Swagger UI. Use `POST /chat` with body `{ "session_id": "<id>", "message": "<text>" }`. Session state: **Redis** when `REDIS_URL` is set (e.g. `redis://localhost:6379/0`), else **in-memory**. Optional: `REDIS_SESSION_TTL_SECONDS` (default 86400 = 24h).
+  Then open `http://127.0.0.1:8000/ui/` for the Chat & Debug UI or `http://127.0.0.1:8000/docs` for Swagger. Session state: **Redis** when `REDIS_URL` is set, else **in-memory**. Optional: `REDIS_SESSION_TTL_SECONDS` (default 86400 = 24h).
 - **Docker (one command)**  
   From repo root:
   ```bash
   docker-compose up
   ```
-  Builds the API image and starts Redis + API. API: `http://localhost:8000`, Swagger: `http://localhost:8000/docs`. Session state is stored in Redis. Optional: copy `.env.example` to `.env` and set `REDIS_URL`, `REDIS_SESSION_TTL_SECONDS` for local overrides.
+  Builds the API image and starts Redis + API. API: `http://localhost:8000`, Chat UI: `http://localhost:8000/ui/`, Swagger: `http://localhost:8000/docs`. Session state is stored in Redis. Optional: copy `.env.example` to `.env` for overrides.
 
 ---
 

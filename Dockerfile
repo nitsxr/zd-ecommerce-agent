@@ -8,7 +8,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Application code (orchestrator, agents, memory, tools, observability, schemas, src)
+# Application code (orchestrator, agents, memory, tools, observability, schemas, src, ui)
 COPY agents/ agents/
 COPY memory/ memory/
 COPY observability/ observability/
@@ -16,6 +16,7 @@ COPY orchestrator/ orchestrator/
 COPY schemas/ schemas/
 COPY tools/ tools/
 COPY src/ src/
+COPY ui/ ui/
 
 # REDIS_URL set by docker-compose (e.g. redis://redis:6379/0)
 ENV PYTHONPATH=/app

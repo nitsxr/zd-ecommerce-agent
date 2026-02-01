@@ -8,17 +8,17 @@ Deliver a **scalable, observable, multi-agent conversational system** with a **t
 
 ## Milestone 0 — Architecture Lock (FOUNDATIONAL)
 
-**Status:** Blocking
+**Status:** Done
 **Owner:** Lead / Architect
 **Exit Criteria:** No work proceeds without this completed
 
 ### Tasks
 
-* [ ] Define system architecture (logical + physical)
-* [ ] Define agent responsibilities and boundaries
-* [ ] Define orchestrator control flow
-* [ ] Define state model (session, entities, context)
-* [ ] Define trace model (turn-level observability)
+* [x] Define system architecture (logical + physical)
+* [x] Define agent responsibilities and boundaries
+* [x] Define orchestrator control flow
+* [x] Define state model (session, entities, context)
+* [x] Define trace model (turn-level observability)
 
 ### Artifacts
 
@@ -36,16 +36,16 @@ Deliver a **scalable, observable, multi-agent conversational system** with a **t
 
 ## Milestone 1 — Core Contracts & Schemas
 
-**Status:** Parallelizable after M0
+**Status:** Done
 **Owner:** Agent A
 
 ### Tasks
 
-* [ ] Agent input/output schema
-* [ ] Tool invocation schema
-* [ ] Trace event schema
-* [ ] Conversation state schema
-* [ ] Validation rules (order ID, timestamps, etc.)
+* [x] Agent input/output schema
+* [x] Tool invocation schema
+* [x] Trace event schema
+* [x] Conversation state schema
+* [x] Validation rules (order ID, timestamps, etc.)
 
 ### Artifacts
 
@@ -67,16 +67,16 @@ Deliver a **scalable, observable, multi-agent conversational system** with a **t
 
 ## Milestone 2 — Orchestrator & State Machine
 
-**Status:** Parallel (depends on M1)
+**Status:** Done
 **Owner:** Agent B
 
 ### Tasks
 
-* [ ] Intent detection
-* [ ] Agent routing logic
-* [ ] Multi-turn state machine
-* [ ] Missing-information handling
-* [ ] Validation before agent execution
+* [x] Intent detection
+* [x] Agent routing logic
+* [x] Multi-turn state machine
+* [x] Missing-information handling
+* [x] Validation before agent execution
 
 ### Artifacts
 
@@ -97,15 +97,15 @@ Deliver a **scalable, observable, multi-agent conversational system** with a **t
 
 ## Milestone 3 — Memory & Persistence Layer
 
-**Status:** Parallel (depends on M1)
+**Status:** Done
 **Owner:** Agent C
 
 ### Tasks
 
-* [ ] Redis session store
-* [ ] Conversation message store
-* [ ] State diffing mechanism
-* [ ] TTL and eviction policy
+* [x] Redis session store
+* [x] Conversation message store
+* [x] State diffing mechanism
+* [x] TTL and eviction policy
 
 ### Artifacts
 
@@ -126,15 +126,15 @@ Deliver a **scalable, observable, multi-agent conversational system** with a **t
 
 ## Milestone 4 — Business Agents Implementation
 
-**Status:** Parallel (depends on M1)
+**Status:** Done
 **Owner:** Agent D
 
 ### Tasks
 
-* [ ] OrderCancellationAgent
-* [ ] OrderTrackingAgent
-* [ ] ProductInfoAgent
-* [ ] Schema-validated responses only
+* [x] OrderCancellationAgent
+* [x] OrderTrackingAgent
+* [x] ProductInfoAgent
+* [x] Schema-validated responses only
 
 ### Artifacts
 
@@ -155,15 +155,15 @@ Deliver a **scalable, observable, multi-agent conversational system** with a **t
 
 ## Milestone 5 — Mock APIs & Tooling
 
-**Status:** Parallel (depends on M1)
+**Status:** Done
 **Owner:** Agent E
 
 ### Tasks
 
-* [ ] Mock order database
-* [ ] Cancellation API (24-hour rule)
-* [ ] Tracking API
-* [ ] Deterministic error cases
+* [x] Mock order database
+* [x] Cancellation API (24-hour rule)
+* [x] Tracking API
+* [x] Deterministic error cases
 
 ### Artifacts
 
@@ -183,15 +183,15 @@ Deliver a **scalable, observable, multi-agent conversational system** with a **t
 
 ## Milestone 6 — Observability & Tracing
 
-**Status:** Sequential (after M2, M3)
+**Status:** Done
 **Owner:** Agent F
 
 ### Tasks
 
-* [ ] Structured logging
-* [ ] Trace middleware
-* [ ] Trace store abstraction
-* [ ] Error and latency tracking
+* [x] Structured logging
+* [x] Trace middleware
+* [x] Trace store abstraction
+* [x] Error and latency tracking
 
 ### Artifacts
 
@@ -211,15 +211,15 @@ Deliver a **scalable, observable, multi-agent conversational system** with a **t
 
 ## Milestone 7 — Chat Interface & Debug Console
 
-**Status:** Parallel (after M2, M6)
+**Status:** Done
 **Owner:** Agent G
 
 ### Tasks
 
-* [ ] Chat UI (send messages)
-* [ ] Session browser
-* [ ] Conversation timeline
-* [ ] Trace inspector (side-by-side)
+* [x] Chat UI (send messages)
+* [x] Session browser
+* [x] Conversation timeline
+* [x] Trace inspector (side-by-side)
 
 ### Artifacts
 
@@ -240,15 +240,15 @@ Deliver a **scalable, observable, multi-agent conversational system** with a **t
 
 ## Milestone 8 — API Surface & Documentation
 
-**Status:** Parallel (after M2)
+**Status:** Done
 **Owner:** Agent H
 
 ### Tasks
 
-* [ ] `/chat` endpoint spec
-* [ ] Read-only session APIs
-* [ ] OpenAPI / Swagger
-* [ ] README run instructions
+* [x] `/chat` endpoint spec
+* [x] Read-only session APIs
+* [x] OpenAPI / Swagger
+* [x] README run instructions
 
 ### Artifacts
 
@@ -265,15 +265,15 @@ Deliver a **scalable, observable, multi-agent conversational system** with a **t
 
 ## Milestone 9 — Dockerization & Packaging
 
-**Status:** Final
+**Status:** Done (UI Dockerfile deferred until M7)
 **Owner:** Agent H
 
 ### Tasks
 
-* [ ] Backend Dockerfile
-* [ ] UI Dockerfile
-* [ ] docker-compose.yml
-* [ ] Environment config
+* [x] Backend Dockerfile
+* [ ] UI Dockerfile (deferred until M7 Chat UI)
+* [x] docker-compose.yml
+* [x] Environment config
 
 ### Acceptance Criteria
 

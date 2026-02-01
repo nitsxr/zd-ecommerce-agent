@@ -1,13 +1,17 @@
 """
-FastAPI app: POST /chat and read-only session APIs.
-OpenAPI/Swagger at /docs, ReDoc at /redoc.
+FastAPI app: POST /chat, read-only session APIs, traces API, and UI static files.
+OpenAPI/Swagger at /docs, ReDoc at /redoc. Chat UI at /ui.
 """
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from memory.conversation_store import get_session_summary, get_turns
 from memory.session_store import default_store
-from observability.tracer import emit_trace
+from observability.tracer import emit_trace, get_traces_for_session
 from orchestrator.decision_engine import run_turn
 
 app = FastAPI(
@@ -19,7 +23,7 @@ app = FastAPI(
     version="1.0.0",
     openapi_tags=[
         {"name": "Chat", "description": "Send messages and get responses"},
-        {"name": "Sessions", "description": "Read-only session state"},
+        {"name": "Sessions", "description": "Read-only session state and traces"},
     ],
 )
 
@@ -91,3 +95,23 @@ def get_session_turns(session_id: str):
         raise HTTPException(status_code=404, detail="Session not found")
     turns = get_turns(session_id, default_store)
     return {"session_id": session_id, "turns": turns}
+
+
+@app.get("/sessions/{session_id}/traces", tags=["Sessions"])
+def get_session_traces(session_id: str):
+    """
+    Get trace events for a session. Read-only. Aligned by turn_index with /turns.
+    Returns list of trace events (oldest first). 200 even if empty (no 404).
+    """
+    traces = get_traces_for_session(session_id)
+    return {"session_id": session_id, "traces": traces}
+
+
+# UI: serve static files from ui/ (M7)
+_ui_dir = Path(__file__).resolve().parent.parent / "ui"
+if _ui_dir.exists():
+    app.mount("/ui", StaticFiles(directory=str(_ui_dir), html=True), name="ui")
+
+    @app.get("/")
+    def root():
+        return RedirectResponse(url="/ui/")

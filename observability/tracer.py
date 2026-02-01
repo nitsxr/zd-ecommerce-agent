@@ -48,6 +48,12 @@ def set_trace_store(store: TraceStore) -> None:
     _default_trace_store = store
 
 
+def get_traces_for_session(session_id: str, limit: int = 50) -> list[dict[str, Any]]:
+    """Read-only: return trace events for a session, oldest first (aligned with turn_index)."""
+    raw = _default_trace_store.get_by_session(session_id, limit=limit)
+    return list(reversed(raw))
+
+
 def emit_trace(trace: dict[str, Any]) -> None:
     """
     Emit turn-level trace: add ISO8601 timestamp if missing, log, and store.
